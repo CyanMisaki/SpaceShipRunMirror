@@ -16,7 +16,7 @@ namespace Main
         [SerializeField] private int _spawnRadius = 100;
         [SerializeField] private int _crysNeededInLevel = 3;
         [SerializeField] private GameObject _panel;
-            
+        
         
         public override void OnStartServer()
         {
@@ -35,7 +35,8 @@ namespace Main
             var spawnTransform = GetStartPosition();
             
             var player = Instantiate(playerPrefab, spawnTransform.position, spawnTransform.rotation);
-            _players.Add(conn.connectionId, player.GetComponent<ShipController>());
+            var shControl = player.GetComponent<ShipController>();
+            _players.Add(conn.connectionId, shControl);
             
             _players[conn.connectionId].onPlayerCollided += OnPlayerCollided;
             _players[conn.connectionId].onCrysCollided += OnCrysCollided;

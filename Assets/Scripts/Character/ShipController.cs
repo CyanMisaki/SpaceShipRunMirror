@@ -19,6 +19,7 @@ namespace Characters
         private PlayerLabel playerLabel;
         private float _shipSpeed;
         private Rigidbody _rigidbody;
+        private string _myName;
 
         [SyncVar(hook=nameof(SetNameFromServer))] private string _playerName;
         
@@ -27,13 +28,12 @@ namespace Characters
         public Action<NetworkConnection> onCrysCollided;
         
         public int NumOfCrys { get; set; }
-        public string PlayerName { get; set; }
-
+        
         protected override float speed => _shipSpeed;
 
         
         #region ChangePlayerName
-        [Server] 
+        [Server]
         public void ChangePlayerName(string newValue)
         {
             _playerName = newValue;
@@ -47,34 +47,21 @@ namespace Characters
 
         private void SetNameFromServer(string oldName, string newName)
         {
-            PlayerName = newName;
             playerLabel.SetName(newName);
         }
         #endregion
-        
-       
-
         private void OnGUI()
         {
             GUI.Label(new Rect(10, 10, 100, 20), NumOfCrys.ToString());
             if (_cameraOrbit == null)            
                 return;
-            
             _cameraOrbit.ShowPlayerLabels(playerLabel);
             
         }
 
-        public override void OnStartClient()
+       public override void OnStartAuthority()
         {
-            _nameField = FindObjectOfType<NameField>();
-            CmdChangePlayerName(_nameField.PlayerName);
-            _nameField.DisableField();
-            base.OnStartClient();
-        }
-
-        public override void OnStartAuthority()
-        {
-            gameObject.name = PlayerName;
+            gameObject.name = _playerName;
             
             _rigidbody = GetComponent<Rigidbody>();
             if (_rigidbody == null)            
@@ -83,12 +70,19 @@ namespace Characters
             _cameraOrbit = FindObjectOfType<CameraOrbit>();
             _cameraOrbit.Initiate(_cameraAttach == null ? transform : _cameraAttach);
             playerLabel = GetComponentInChildren<PlayerLabel>();
-            
-            
+
+            _nameField = FindObjectOfType<NameField>();
+            _myName = _nameField.PlayerName;
+            _nameField.DisableField();
+            CmdChangePlayerName(_myName);
             
             base.OnStartAuthority();
+
+
+
         }
 
+        
         protected override void HasAuthorityMovement()
         {
             var spaceShipSettings = SettingsContainer.Instance?.SpaceShipSettings;

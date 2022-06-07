@@ -8,7 +8,7 @@ using UnityEngine;
 public class NameField : MonoBehaviour
 {
     [SerializeField]private TMP_InputField _inputField;
-    public string PlayerName { get; private set; }
+    public string PlayerName {get; private set;}
     
     private void Start()
     {
@@ -18,7 +18,6 @@ public class NameField : MonoBehaviour
     private void SavePlayerName(string input)
     {
         PlayerName = input;
-        
     }
 
     public void DisableField()
