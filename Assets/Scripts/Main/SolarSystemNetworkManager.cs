@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Characters;
 using Messages;
 using UnityEngine;
@@ -35,6 +36,7 @@ namespace Main
             var spawnTransform = GetStartPosition();
             
             var player = Instantiate(playerPrefab, spawnTransform.position, spawnTransform.rotation);
+            player.name = "Default";
             var shControl = player.GetComponent<ShipController>();
             _players.Add(conn.connectionId, shControl);
             
@@ -58,7 +60,7 @@ namespace Main
 
             _crysNeededInLevel--;
         }
-
+        
         [Server]
         private void OnPlayerCollided(NetworkConnection conn)
         {

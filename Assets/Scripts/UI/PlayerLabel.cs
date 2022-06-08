@@ -5,7 +5,7 @@ namespace UI
 {
     public class PlayerLabel : MonoBehaviour
     {
-        private string _name="Default";
+        private string _name="";
 
         public void SetName(string name)
         {
