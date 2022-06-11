@@ -5,6 +5,7 @@ using Messages;
 using UnityEngine;
 using Mirror;
 using TMPro;
+using UI;
 using Random = UnityEngine.Random;
 
 namespace Main
@@ -16,6 +17,12 @@ namespace Main
         [SerializeField] private int _spawnRadius = 100;
         [SerializeField] private int _crysNeededInLevel = 3;
         [SerializeField] private GameObject _panel;
+
+        #region PlayerName
+        [SerializeField]private TMP_InputField _inputField;
+        public Action<string> _onNameSetted;
+        public string PlayerName {get; private set;}
+        #endregion
         
         
         public override void OnStartServer()
@@ -30,6 +37,21 @@ namespace Main
             
         }
 
+        public override void OnStartClient()
+        {
+            _inputField.onEndEdit.AddListener(SavePlayerName);
+            base.OnStartClient();
+        }
+
+        private void SavePlayerName(string input)
+        {
+            _inputField.gameObject.SetActive(false);
+            PlayerName = input;
+            _onNameSetted?.Invoke(input);
+            _inputField.onEndEdit.RemoveAllListeners();
+        }
+        
+        
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
             var spawnTransform = GetStartPosition();
@@ -41,9 +63,10 @@ namespace Main
             _players[conn.connectionId].onPlayerCollided += OnPlayerCollided;
             _players[conn.connectionId].onCrysCollided += OnCrysCollided;
             _players[conn.connectionId].NumOfCrys = 0;
-            
+
             NetworkServer.AddPlayerForConnection(conn, player);
         }
+        
 
         [Server]
         private void OnCrysCollided(NetworkConnection conn)

@@ -14,42 +14,42 @@ namespace Characters
     public class ShipController : NetworkMovableObject
     {
         [SerializeField] private Transform _cameraAttach;
-        private NameField _nameField;
+        private SolarSystemNetworkManager _netManager;
         private CameraOrbit _cameraOrbit;
         private PlayerLabel playerLabel;
         private float _shipSpeed;
         private Rigidbody _rigidbody;
-        private string _myName;
 
-        [SyncVar(hook=nameof(SetNameFromServer))] private string _playerName;
-        
         private Vector3 currentPositionSmoothVelocity;
         public Action<NetworkConnection> onPlayerCollided;
         public Action<NetworkConnection> onCrysCollided;
-        
+
         public int NumOfCrys { get; set; }
         
         protected override float speed => _shipSpeed;
 
         
         #region ChangePlayerName
-        [Server]
-        public void ChangePlayerName(string newValue)
+        [TargetRpc]
+        public void TargetChangePlayerName(NetworkConnection conn, string newValue)
         {
-            _playerName = newValue;
+            var beh = conn.identity.NetworkBehaviours;
+            foreach (var item in beh)
+            {
+                if (!item.gameObject.GetComponentInChildren<PlayerLabel>()) continue;
+                item.gameObject.GetComponentInChildren<PlayerLabel>().SetName(newValue);
+                break;
+            }
+            //conn.identity.gameObject.GetComponentInChildren<PlayerLabel>().SetName(newValue);
         }
         
         [Command] 
         public void CmdChangePlayerName(string newValue)
         {
-            ChangePlayerName(newValue);
-        }
-
-        private void SetNameFromServer(string oldName, string newName)
-        {
-            playerLabel.SetName(newName);
+            TargetChangePlayerName(gameObject.GetComponent<NetworkIdentity>().connectionToClient, newValue);
         }
         #endregion
+        
         private void OnGUI()
         {
             GUI.Label(new Rect(10, 10, 100, 20), NumOfCrys.ToString());
@@ -59,10 +59,8 @@ namespace Characters
             
         }
 
-       public override void OnStartAuthority()
+        public override void OnStartAuthority()
         {
-            gameObject.name = _playerName;
-            
             _rigidbody = GetComponent<Rigidbody>();
             if (_rigidbody == null)            
                 return;
@@ -71,19 +69,14 @@ namespace Characters
             _cameraOrbit.Initiate(_cameraAttach == null ? transform : _cameraAttach);
             playerLabel = GetComponentInChildren<PlayerLabel>();
 
-            _nameField = FindObjectOfType<NameField>();
-            _myName = _nameField.PlayerName;
-            _nameField.DisableField();
-            CmdChangePlayerName(_myName);
-            
+            _netManager = FindObjectOfType<SolarSystemNetworkManager>();
+            _netManager._onNameSetted+= CmdChangePlayerName;
+
             base.OnStartAuthority();
-
-
-
         }
+       
 
-        
-        protected override void HasAuthorityMovement()
+       protected override void HasAuthorityMovement()
         {
             var spaceShipSettings = SettingsContainer.Instance?.SpaceShipSettings;
             if (spaceShipSettings == null)            
